@@ -18,7 +18,6 @@ GIT_REPO_NAME  = 'roadmap'
 # various git params
 GIT_LABELS      = os.getenv('GIT_LABELS')
 GIT_LABELS_LIST = GIT_LABELS.split(",")
-GIT_PROJECT_ID  = os.getenv('GIT_PROJECT_ID')
 
 GIT_ROADMAP     = os.getenv('GIT_ROADMAP')
 
@@ -83,6 +82,17 @@ class gitHubProc:
 
         return issue
 
+    def edit_github_issue(self, issue_number, data):
+
+        url = 'https://api.github.com/repos/%s/%s/issues/%s' % (self.GIT_REPO_OWNER, self.GIT_REPO_NAME, issue_number)
+
+        r = self.session.patch(url, json.dumps(data))
+        if r.status_code == 200:
+            print('Successfully updated Issue with issue number %s' % issue_number)
+        else:
+            print('Could not edit Issue with issue number %s' % issue_number)
+            print('Response:', r.content)
+        
     def add_label_to_issue(self, issue_number, label):
         url = 'https://api.github.com/repos/%s/%s/issues/%s/labels' % (self.GIT_REPO_OWNER, self.GIT_REPO_NAME, issue_number)
         # Set labels
@@ -127,11 +137,13 @@ class gitHubProc:
         column_id, card_id = self.get_card_id_by_issue(gh_issue)
         # If usse Status is Done - move to Released status
         # set the version as label
+        # close the issue
         if str(jira.fields.status) in ['Done']:
             if column_id != self.columns_dict['Released']:
                 self.move_in_project(card_id, self.columns_dict['Released'])
                 if len(jira.fields.fixVersions) != 0:
                     self.add_label_to_issue(gh_issue['number'], str(jira.fields.fixVersions[0]))
+                self.edit_github_issue(gh_issue['number'], {"state": "closed"})
 
         elif str(jira.fields.status) in ['In Progress', 'In Packaging', 'In Doc', 'In QA', 'Pending Release', 'Ready For Merge']:
             if column_id != self.columns_dict['Actively working']:
@@ -277,8 +289,9 @@ for issue in matching:
     body = """
 {body}
 {description}
-""".format(body = issue_body, description = issue.fields.description)
+
+[Link to JIRA]({JIRA_URI}/browse/{key})
+""".format(body = issue_body, description = issue.fields.description, JIRA_URI = JIRA_URI, key = issue.key)
 
     issue_id = gh.make_github_issue(title, body, GIT_LABELS_LIST)
     gh.move_to_project(issue_id)
-
