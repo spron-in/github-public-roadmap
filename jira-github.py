@@ -12,8 +12,8 @@ GIT_REPO_OWNER = os.getenv('GIT_GIT_REPO_OWNER')
 GIT_REPO_NAME  = os.getenv('GIT_GIT_REPO_NAME')
 
 # The repository to add this issue to
-GIT_REPO_OWNER = 'percona'
-GIT_REPO_NAME  = 'roadmap'
+GIT_REPO_OWNER = os.getenv('GIT_REPO_OWNER')
+GIT_REPO_NAME  = os.getenv('GIT_REPO_NAME')
 
 # various git params
 GIT_LABELS      = os.getenv('GIT_LABELS')
